@@ -12,11 +12,12 @@ import {
   ExchangePerilDirect,
   ExchangePerilTopic,
   PauseKey,
+  WarRecognitionsPrefix,
 } from "../internal/routing/routing.js";
 import { GameState } from "../internal/gamelogic/gamestate.js";
 import { commandSpawn } from "../internal/gamelogic/spawn.js";
 import { commandMove } from "../internal/gamelogic/move.js";
-import { handlerMove, handlerPause } from "./handlers.js";
+import { handlerMove, handlerPause, handlerWar } from "./handlers.js";
 import { publishJSON } from "../internal/pubsub/publish.js";
 
 async function main() {
@@ -47,7 +48,7 @@ async function main() {
     `${ArmyMovesPrefix}.${username}`,
     `${ArmyMovesPrefix}.*`,
     SimpleQueueType.Transient,
-    handlerMove(gs),
+    handlerMove(gs, publishCh),
   );
 
   await subscribeJSON(
@@ -59,6 +60,15 @@ async function main() {
     handlerPause(gs),
   );
 
+  await subscribeJSON(
+    conn,
+    ExchangePerilTopic,
+    WarRecognitionsPrefix,
+    `${WarRecognitionsPrefix}.*`,
+    SimpleQueueType.Durable,
+    handlerWar(gs),
+  );
+
   while (true) {
     const words = await getInput();
     if (words.length === 0) {
@@ -67,12 +77,12 @@ async function main() {
     const command = words[0];
     if (command === "move") {
       try {
-        const move = commandMove(gs, words)
-        await publishJSON(
+        const move = commandMove(gs, words);
+        publishJSON(
           publishCh,
           ExchangePerilTopic,
           `${ArmyMovesPrefix}.${username}`,
-          move
+          move,
         );
       } catch (err) {
         console.log((err as Error).message);
