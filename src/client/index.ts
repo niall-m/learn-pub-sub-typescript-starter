@@ -6,10 +6,7 @@ import {
   printClientHelp,
   printQuit,
 } from "../internal/gamelogic/gamelogic.js";
-import {
-  SimpleQueueType,
-  subscribeJSON,
-} from "../internal/pubsub/consume.js";
+import { SimpleQueueType, subscribeJSON } from "../internal/pubsub/consume.js";
 import {
   ArmyMovesPrefix,
   ExchangePerilDirect,
